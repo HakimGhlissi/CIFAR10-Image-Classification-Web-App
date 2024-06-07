@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Prediction</title>
+    <link rel="stylesheet" href="./static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Image Prediction</h1>
+        <div class="model-selection">
+            <label>
+                <input type="radio" name="model" value="cnn_model" checked>
+                <span>CNN Model</span>
+            </label>
+            <label>
+                <input type="radio" name="model" value="cnn_model_best">
+                <span>CNN Model (Optuna Optimized)</span>
+            </label>
+            <label>
+                <input type="radio" name="model" value="vgg_cifar10_optimized">
+                <span>VGG (Visual Geometry Group)</span>
+            </label>
+        </div>
+        <div class="upload-box">
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+        <button id="predictButton">Predict</button>
+        <div id="result" class="result-box"></div>
+    </div>
+
+    <script>
+        document.getElementById('predictButton').onclick = async function() {
+            var input = document.getElementById('imageInput');
+            var resultBox = document.getElementById('result');
+            var selectedModel = document.querySelector('input[name="model"]:checked').value;
+
+            if (input.files && input.files[0]) {
+                var file = input.files[0];
+                var formData = new FormData();
+                formData.append('file', file);
+                formData.append('model', selectedModel);
+
+                try {
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    var reader = new FileReader();
+
+                    reader.onload = function(e) {
+                        resultBox.innerHTML = '<img src="' + e.target.result + '" alt="Uploaded Image" class="uploaded-image"><p>Prediction: ' + result.prediction + '</p>';
+                    }
+
+                    reader.readAsDataURL(file);
+                } catch (error) {
+                    resultBox.innerHTML = '<p>Error: ' + error.message + '</p>';
+                }
+            } else {
+                resultBox.innerHTML = '<p>Please upload an image first.</p>';
+            }
+        }
+    </script>
+</body>
+</html>
